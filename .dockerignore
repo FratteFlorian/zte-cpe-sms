@@ -1,0 +1,21 @@
+# Build context is the repository root; only webui/server.js, webui/lib and
+# webui/public end up in the image.
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+README.md
+LICENSE
+docs
+zte-sms.js
+webui/README.md
+
+# never bake credentials or archives into an image
+password
+*.password
+pwd.txt
+messages.json
+*.log
+node_modules/

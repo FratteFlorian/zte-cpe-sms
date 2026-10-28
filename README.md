@@ -199,11 +199,15 @@ curl -s 'http://localhost:8080/api/messages?limit=1'    # http://<host-ip>:8080
 The UI lists the last 10 messages, sends new ones, shows counters for the local archive
 and the messages still on the device, and polls every 60 s in the background.
 
-Prefer a container over the systemd unit? [webui/Dockerfile](webui/Dockerfile) and
-[webui/docker-compose.yml](webui/docker-compose.yml) are included — they sit next to the
-web UI, so `docker compose up -d --build` runs from `webui/`, not from the repository
-root. `network_mode: host` is mandatory there because the modem detection counts hops.
-Details in [webui/README.md](webui/README.md#docker-instead-of-systemd).
+Prefer a container over the systemd unit? [Dockerfile](Dockerfile) and
+[docker-compose.yml](docker-compose.yml) sit in the repository root:
+
+```bash
+docker compose up -d --build        # from the repository root
+```
+
+`network_mode: host` is mandatory there, because the modem detection counts hops. Details
+in [webui/README.md](webui/README.md#docker-instead-of-systemd).
 
 **No authentication.** It is meant for a trusted LAN. Do not expose it to the internet
 without putting a reverse proxy with auth in front of it.

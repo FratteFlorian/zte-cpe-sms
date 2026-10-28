@@ -38,7 +38,7 @@ http://<host-ip>:8080
 | `lib/zte.js` | modem client: login, RSA/AES key exchange, read, send, delete |
 | `lib/store.js` | local archive (JSON, max. 500 entries) |
 | `public/index.html` | UI (message list + send form, refresh every 30 s) |
-| `Dockerfile`, `docker-compose.yml` | container setup, see [Docker](#docker-instead-of-systemd) |
+| `../Dockerfile`, `../docker-compose.yml` | container setup in the repository root, see [Docker](#docker-instead-of-systemd) |
 
 After installation, on the host:
 
@@ -219,8 +219,9 @@ If it does not work:
 
 ## Docker (instead of systemd)
 
-`Dockerfile` and `docker-compose.yml` are included; the image is `node:22-alpine` plus
-`iputils` (for `tracepath`), no npm install step.
+The `Dockerfile` and `docker-compose.yml` in the repository root build this directory; the
+image is `node:22-alpine` plus `iputils` (for `tracepath`), no npm install step. The CLI is
+not part of the image.
 
 The container needs the same two files as the native install — create them first, with the
 steps above (**2** and **3**), while ignoring the parts about `/opt/zte-sms`:
@@ -231,7 +232,7 @@ touch /etc/zte-sms/password && chmod 600 /etc/zte-sms/password
 printf '%s' 'your-router-password' > /etc/zte-sms/password
 ```
 
-Then, from `webui/`:
+Then, from the repository root:
 
 ```bash
 docker compose up -d --build
@@ -259,7 +260,7 @@ Other notes:
 
 * The container runs as root so it can read the 600 password file. For an unprivileged
   run add `user: "1000:1000"` and `chown` the password file and the volume to that user.
-* Updating: `git pull && docker compose up -d --build`.
+* Updating (from the repository root): `git pull && docker compose up -d --build`.
 * `docker compose config` prints the merged file if something looks off; `docker inspect
   zte-sms --format '{{.State.Health.Status}}'` shows the health state.
 

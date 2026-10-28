@@ -1,14 +1,17 @@
-# Runs the web UI in a container.
+# Runs the web UI in a container. Run from the repository root:
 #
 #   docker compose up -d --build
 #   docker compose logs -f
 #
-# Prerequisites (see README): /etc/zte-sms/password and, if you want to change
-# defaults, /etc/zte-sms/config.json must exist on the host before starting.
+# Prerequisites (see webui/README.md): /etc/zte-sms/password and, if you want to
+# change defaults, /etc/zte-sms/config.json must exist on the host before starting.
 
 services:
   zte-sms:
-    build: .
+    # Context is the repository root because the Dockerfile copies from webui/.
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: zte-cpe-sms:latest
     container_name: zte-sms
     restart: unless-stopped

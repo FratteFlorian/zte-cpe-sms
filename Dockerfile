@@ -1,3 +1,7 @@
+# Build context is the repository root:
+#   docker build -t zte-cpe-sms .
+#   docker compose up -d --build
+#
 # Small runtime image: the server has no npm dependencies, Node built-ins only.
 FROM node:22-alpine
 
@@ -7,9 +11,10 @@ RUN apk add --no-cache iputils
 
 WORKDIR /app
 
-COPY server.js ./
-COPY lib ./lib
-COPY public ./public
+# Only the web UI goes into the image — the CLI (zte-sms.js) stays outside.
+COPY webui/server.js ./
+COPY webui/lib ./lib
+COPY webui/public ./public
 
 # The archive is written here; mount a volume over it.
 RUN mkdir -p /var/lib/zte-sms
