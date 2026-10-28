@@ -1,8 +1,8 @@
 # zte-cpe-sms — SMS toolkit for ZTE 5G CPEs
 
 Unofficial SMS toolkit for ZTE 5G CPEs (MC889 / MC888, firmware `BD_ATMC889V1.0.0B19`
-and similar). Talks to the router's internal JSON API directly — no browser, no web UI,
-no SIM swapping.
+and similar). Talks to the router's internal JSON API directly — no browser automation,
+no use of the router's own web interface, no SIM swapping.
 
 It can
 
