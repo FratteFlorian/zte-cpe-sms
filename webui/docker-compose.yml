@@ -1,0 +1,47 @@
+# Runs the web UI in a container.
+#
+#   docker compose up -d --build
+#   docker compose logs -f
+#
+# Prerequisites (see README): /etc/zte-sms/password and, if you want to change
+# defaults, /etc/zte-sms/config.json must exist on the host before starting.
+
+services:
+  zte-sms:
+    build: .
+    image: zte-cpe-sms:latest
+    container_name: zte-sms
+    restart: unless-stopped
+
+    # Required for the automatic modem detection: it takes hop 2 of a traceroute
+    # (hop 1 = home router, hop 2 = modem). With a bridge network the hop count
+    # is off by one and hop 2 would be the Docker gateway, i.e. the home router
+    # itself. Sharing the host network namespace keeps the view identical to a
+    # native install.
+    #
+    # On Docker Desktop (macOS/Windows) host networking is not equivalent —
+    # there, drop this line and set ZTE_HOST instead.
+    network_mode: host
+
+    environment:
+      ZTE_CONFIG: /etc/zte-sms/config.json
+      # ZTE_HOST: 192.0.2.10     # skip auto-detection, e.g. with an extra hop in between
+      # ZTE_PORT: "8080"         # only if you do not set "port" in config.json
+
+    volumes:
+      # Config and router password: read-only, so the container cannot change them.
+      - /etc/zte-sms:/etc/zte-sms:ro
+      # SMS archive — this is the only copy, back it up.
+      - zte-sms-data:/var/lib/zte-sms
+
+    # The image runs as root so it can read the 600 password file without
+    # ownership games. To run it unprivileged instead, add:
+    #   user: "1000:1000"
+    # and make sure the password file is readable for that user and the archive
+    # volume is owned by it.
+    #
+    # The healthcheck is defined in the Dockerfile and reads the port from
+    # config.json, so it needs no override here.
+
+volumes:
+  zte-sms-data:

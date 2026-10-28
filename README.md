@@ -169,6 +169,10 @@ curl -s 'http://localhost:8080/api/messages?limit=1'    # http://<host-ip>:8080
 The UI lists the last 10 messages, sends new ones, shows counters for the local archive
 and the messages still on the device, and polls every 60 s in the background.
 
+A `Dockerfile` and `docker-compose.yml` are included if you prefer a container over the
+systemd unit — with `network_mode: host`, since the modem detection counts hops. Details
+in [webui/README.md](webui/README.md#docker-instead-of-systemd).
+
 **No authentication.** It is meant for a trusted LAN. Do not expose it to the internet
 without putting a reverse proxy with auth in front of it.
 

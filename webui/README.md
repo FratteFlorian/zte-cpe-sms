@@ -4,7 +4,8 @@ Small web UI for ZTE 5G CPEs: shows the last 10 SMS and sends new ones. Every me
 **archived locally and then deleted from the modem**, so the SIM storage never fills up.
 
 It runs as a systemd service on any small Linux host — one core, 512 MB RAM and a few MB
-of disk are plenty. No npm dependencies, Node built-ins only (tested with Node 18).
+of disk are plenty — or in Docker ([see below](#docker-instead-of-systemd)). No npm
+dependencies, Node built-ins only (tested with Node 18).
 
 ```
 http://<host-ip>:8080
@@ -18,6 +19,7 @@ http://<host-ip>:8080
 | `lib/zte.js` | modem client: login, RSA/AES key exchange, read, send, delete |
 | `lib/store.js` | local archive (JSON, max. 500 entries) |
 | `public/index.html` | UI (message list + send form, refresh every 30 s) |
+| `Dockerfile`, `docker-compose.yml` | container setup, see [Docker](#docker-instead-of-systemd) |
 
 After installation, on the host:
 
@@ -195,6 +197,52 @@ If it does not work:
 | log `modem: auto-detect`, requests fail | `tracepath` missing, or hop 2 is not the modem — set `"host"` |
 | `device` is `null` in the API answer | modem did not answer; check the address and that the device is reachable |
 | page loads, list stays empty | archive empty and modem has no messages |
+
+## Docker (instead of systemd)
+
+`Dockerfile` and `docker-compose.yml` are included; the image is `node:22-alpine` plus
+`iputils` (for `tracepath`), no npm install step.
+
+The container needs the same two files as the native install — create them first, with the
+steps above (**2** and **3**), while ignoring the parts about `/opt/zte-sms`:
+
+```bash
+mkdir -p /etc/zte-sms && chmod 700 /etc/zte-sms
+touch /etc/zte-sms/password && chmod 600 /etc/zte-sms/password
+printf '%s' 'your-router-password' > /etc/zte-sms/password
+```
+
+Then, from `webui/`:
+
+```bash
+docker compose up -d --build
+docker compose logs -f          # "SMS WebUI on http://0.0.0.0:8080 (modem: auto-detect)"
+curl -s 'http://localhost:8080/api/messages?limit=1'
+```
+
+| Detail | Why |
+|---|---|
+| `network_mode: host` | The modem is found via hop 2 of a traceroute. In a bridge network hop 2 is the Docker gateway instead — measured: hop 1 `172.17.0.1`, hop 2 `192.168.68.1` (the home router), so every request goes to the wrong device. With the host network namespace the view is identical to a native install. |
+| `/etc/zte-sms` mounted read-only | The container may read the password but never change it. |
+| Named volume `zte-sms-data` on `/var/lib/zte-sms` | Holds the archive, which is the only copy. `docker compose down -v` would delete it. |
+| Healthcheck from the image | Fetches the static page only (never the modem) and reads `port` from `config.json`, so it stays correct if you change the port. |
+
+**No host networking available** (Docker Desktop on macOS/Windows, rootless setups, a
+modem behind an extra hop): drop `network_mode: host`, publish the port instead
+(`ports: ["8080:8080"]`) and set the address explicitly:
+
+```yaml
+    environment:
+      ZTE_HOST: 192.0.2.10
+```
+
+Other notes:
+
+* The container runs as root so it can read the 600 password file. For an unprivileged
+  run add `user: "1000:1000"` and `chown` the password file and the volume to that user.
+* Updating: `git pull && docker compose up -d --build`.
+* `docker compose config` prints the merged file if something looks off; `docker inspect
+  zte-sms --format '{{.State.Health.Status}}'` shows the health state.
 
 ## Archive and modem storage
 
