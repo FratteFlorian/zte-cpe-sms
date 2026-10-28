@@ -8,6 +8,17 @@
 > it through a tunnel — use a VPN for remote access. Binding to `127.0.0.1` behind a
 > properly authenticated proxy is the only safe way to make it reachable from outside.
 
+> ## ⚠️ New messages are deleted from the modem after archiving
+>
+> The service reads new SMS, stores them in `/var/lib/zte-sms/messages.json` and then
+> **deletes them from the device**. From then on they exist only in this archive and in
+> this UI — they are gone from the normal ZTE storage, and from anything else that reads
+> the SIM (another app, a second device, the modem's own inbox). If that is not what you
+> want, set `"purgeDevice": false` and clear the SIM yourself.
+>
+> The archive is the only remaining copy: back it up. Deleting the volume, the file or
+> the host loses the messages for good.
+
 Small web UI for ZTE 5G CPEs: shows the last 10 SMS and sends new ones. Every message is
 **archived locally and then deleted from the modem**, so the SIM storage never fills up.
 

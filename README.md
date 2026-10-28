@@ -21,6 +21,8 @@ It can
 * **send** messages,
 * **delete** them from the device,
 * keep a **local archive** (the web UI does read → archive → delete, so the SIM never fills up).
+  The deletion is permanent: after archiving, the message is gone from the modem's inbox
+  and only exists in the archive. `"purgeDevice": false` keeps the device copy instead.
 
 Everything is plain Node.js with zero dependencies (Node 18+).
 
@@ -38,7 +40,7 @@ it keeps working, so the toolkit bypasses the UI entirely.
 
 ## Protocol findings worth knowing
 
-Full details in [docs/PROTOCOL.md](docs/PROTOCOL.md). The three things that cost the
+Full details in [docs/PROTOCOL.md](docs/PROTOCOL.md). The four things that cost the
 most time and are not documented anywhere:
 
 1. **`AD` must be recomputed after the key exchange.** The device rotates `RD` when you
@@ -48,6 +50,11 @@ most time and are not documented anywhere:
    `{"messages":[]}`, no matter how many messages are stored.
 3. **`data_per_page=10` hangs** (63 s timeout, reproducible). 8 or fewer reply in
    milliseconds; the client uses 5 per page.
+4. **The message body must be UCS-2 hex**, and `encode_type` still says `GSM7_default`.
+   Sending readable text in `MessageBody` gets `{"result":"failure"}`; so does a hex body
+   with `encode_type=UNICODE`. The accepted pair on this firmware is
+   `MessageBody=<gcm(ucs2hex(text))>` + `encode_type=GSM7_default`. The read endpoints do
+   not care, which makes this look like an authentication problem at first.
 
 ## Quick start (CLI)
 
@@ -66,6 +73,11 @@ The modem address is resolved automatically — see [Modem address](#modem-addre
 
 What is needed is the **web UI password of the router** — the one you would type into
 its login page. Nothing else: no API token, no PIN of the SIM.
+
+If you never changed it, the factory password is printed on the **label on the device**
+(ZTE's MC889 quick start guide: "View the label to get the default password"). That
+matters more than it sounds: the device's own web interface is where you would normally
+look it up, and on some firmware that interface is broken — see [Why](#why).
 
 The password is stored as a **plain text file containing only the password** (a single
 trailing newline is stripped, quotes are *not* stripped — do not add any).
@@ -146,8 +158,10 @@ Why it can fail, and what to do:
 
 * **No ICMP/UDP answer from hop 2.** Some carriers filter the probe; the hop shows `?`.
   Try a different target, e.g. `tracepath -n -m 4 1.1.1.1`, or set the address manually.
-* **More than one hop in between** (modem in bridge mode, extra switches, VLANs).
-  Then hop 2 is not the modem — set the address manually.
+* **More than one hop in between.** Every extra router, switch or firewall in the path
+  shifts the count by one — cascaded routers, a pfSense/OPNsense box, VLAN segmentation,
+  modem in bridge mode. Then hop 2 is a switch or the next router instead of the modem:
+  set the address manually with `ZTE_HOST` / `"host"`, do not guess hop numbers.
 * **The carrier's own hops are private as well.** Do not try to identify the modem as
   "the last hop with a private address": behind one MC889, hops 3–5 were `172.20.x`,
   `192.168.242.x` and `172.17.x`, the carrier's own CGNAT space. That rule picks a carrier
