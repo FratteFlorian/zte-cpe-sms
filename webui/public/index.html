@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMS · ZTE MC889</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212a; --line:#272c37;
+    --fg:#e8ebf1; --mut:#8b93a4; --acc:#4f8cff; --ok:#3fbf7f; --warn:#f0a44a; --err:#f0605d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg);
+    font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  body{max-width:780px;margin:0 auto;padding:20px 16px 64px}
+  header{display:flex;align-items:center;gap:12px;margin:4px 0 18px}
+  header h1{font-size:17px;font-weight:600;margin:0;letter-spacing:.2px}
+  header .sub{color:var(--mut);font-size:12.5px;margin-top:2px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--mut);flex:0 0 auto;
+    box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(63,191,127,.18)}
+  .dot.err{background:var(--err);box-shadow:0 0 0 3px rgba(240,96,93,.18)}
+  .grow{flex:1}
+  button{font:inherit;color:var(--fg);background:var(--card2);border:1px solid var(--line);
+    border-radius:9px;padding:8px 13px;cursor:pointer;transition:.15s}
+  button:hover{border-color:#3a4356;background:#232833}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  button.primary:hover{background:#5f98ff;border-color:#5f98ff}
+  button:disabled{opacity:.55;cursor:default;transform:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+  form{padding:14px;display:grid;gap:10px;margin-bottom:18px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input,textarea{width:100%;font:inherit;color:var(--fg);background:#12151b;
+    border:1px solid var(--line);border-radius:9px;padding:10px 11px;outline:none}
+  input:focus,textarea:focus{border-color:var(--acc)}
+  textarea{resize:vertical;min-height:74px;font-family:inherit}
+  .hint{color:var(--mut);font-size:12px;display:flex;justify-content:space-between;gap:10px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.9px;color:var(--mut);
+    margin:22px 0 10px;font-weight:600}
+  ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  li.msg{padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+  .meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);margin-bottom:6px}
+  .num{color:#cfd6e4;font-variant-numeric:tabular-nums}
+  .badge{font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+  .badge.out{color:#9ec1ff;border-color:#2c4470;background:#16233a}
+  .badge.in{color:#8fe0b6;border-color:#255c43;background:#132a21}
+  .badge.warn{color:#f0b571;border-color:#5c4425;background:#2b2114}
+  .del{background:transparent;border:1px solid transparent;color:var(--mut);
+    padding:0 8px;height:22px;line-height:18px;border-radius:7px;font-size:16px}
+  .del:hover{color:var(--err);background:#2b1618;border-color:#5c2528}
+  .listhead{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px}
+  .listhead h2{margin:0}
+  .listhead .spacer{flex:1}
+  button.small{padding:4px 10px;font-size:12.5px;border-radius:8px}
+  .text{white-space:pre-wrap;word-break:break-word}
+  .empty{color:var(--mut);padding:18px;text-align:center}
+  .toast{margin:0 0 14px;padding:10px 12px;border-radius:10px;font-size:13.5px;display:none}
+  .toast.show{display:block}
+  .toast.ok{background:#132a21;border:1px solid #255c43;color:#9fe8c2}
+  .toast.err{background:#2b1618;border:1px solid #5c2528;color:#ffb4b2}
+  footer{margin-top:22px;color:var(--mut);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <span id="dot" class="dot"></span>
+  <div class="grow">
+    <h1>SMS</h1>
+    <div class="sub" id="sub">connecting …</div>
+  </div>
+  <button id="refresh" title="reload">Refresh</button>
+</header>
+
+<div id="toast" class="toast"></div>
+
+<form id="send" class="card">
+  <input id="number" name="number" type="tel" placeholder="Number, e.g. +436601234567"
+         autocomplete="tel" inputmode="tel" required>
+  <textarea id="text" name="text" placeholder="Message" required></textarea>
+  <div class="hint">
+    <span id="counter">0 / 160</span>
+    <span>Umlauts/emojis = 70 per SMS · new messages are archived locally and removed from the modem</span>
+  </div>
+  <div class="row" style="justify-content:flex-end">
+    <button type="submit" class="primary" id="sendBtn">Send</button>
+  </div>
+</form>
+
+<div class="listhead">
+  <h2>Latest messages</h2>
+  <span class="spacer"></span>
+  <span class="badge" id="countLocal"></span>
+  <span class="badge" id="countDevice"></span>
+</div>
+<ul id="list"><li class="card empty">loading …</li></ul>
+<footer id="foot"></footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const dot = $('dot'), sub = $('sub'), list = $('list'), toast = $('toast');
+const textEl = $('text'), numEl = $('number'), counter = $('counter'), sendBtn = $('sendBtn');
+
+function showToast(msg, kind = 'ok') {
+  toast.textContent = msg;
+  toast.className = 'toast show ' + kind;
+  clearTimeout(showToast.t);
+  showToast.t = setTimeout(() => { toast.className = 'toast'; }, 6000);
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function countChars() {
+  const n = [...textEl.value].length;
+  counter.textContent = `${n} / ${n > 160 ? Math.ceil(n / 153) * 153 : 160}`;
+}
+
+function render(data) {
+  const msgs = data.messages || [];
+  const dev = data.device;
+  $('countLocal').textContent = (data.local != null ? data.local : msgs.length) + ' local';
+  $('countDevice').textContent = (dev == null ? '?' : dev) + ' on modem';
+  $('countDevice').classList.toggle('warn', Number(dev) > 0);
+  if (!msgs.length) {
+    list.innerHTML = '<li class="card empty">no messages yet</li>';
+    return;
+  }
+  list.innerHTML = msgs.map((m) => {
+    const out = String(m.tag) === '2';
+    const draft = String(m.tag) === '4';
+    const label = out ? 'sent' : draft ? 'draft' : 'received';
+    return `<li class="msg">
+      <div class="meta">
+        <span class="badge ${out ? 'out' : 'in'}">${label}</span>
+        <span class="num">${esc(m.number || '?')}</span>
+        <span class="grow"></span>
+        <span>${esc(m.date || '')}</span>
+        <button class="del" data-id="${esc(m.id)}" data-num="${esc(m.number || '?')}"
+                title="delete from archive">&times;</button>
+      </div>
+      <div class="text">${esc(m.text || '(empty)')}</div>
+    </li>`;
+  }).join('');
+}
+
+async function load() {
+  dot.className = 'dot';
+  sub.textContent = 'reading …';
+  try {
+    const r = await fetch('/api/messages?limit=10', { cache: 'no-store' });
+    const data = await r.json();
+    if (!r.ok || data.error) throw new Error(data.error || ('HTTP ' + r.status));
+    dot.className = 'dot on';
+    sub.textContent = `Modem ${data.host || ''} ${data.firmware ? '· ' + data.firmware : ''}`.trim();
+    render(data);
+    $('foot').textContent = 'updated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    dot.className = 'dot err';
+    sub.textContent = 'no connection to the modem';
+    list.innerHTML = `<li class="card empty">${esc(e.message)}</li>`;
+    $('foot').textContent = '';
+  }
+}
+
+$('send').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const number = numEl.value.trim(), text = textEl.value.trim();
+  if (!number || !text) return;
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'sending …';
+  try {
+    const r = await fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number, text }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    showToast('Message handed to ' + number, 'ok');
+    textEl.value = '';
+    countChars();
+    localStorage.setItem('zte.lastNumber', number);
+    setTimeout(load, 2500);
+  } catch (e) {
+    showToast('Error: ' + e.message, 'err');
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+  }
+});
+
+list.addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('.del');
+  if (!btn) return;
+  const id = btn.dataset.id, num = btn.dataset.num;
+  if (!confirm('Delete the message from ' + num + ' from the archive?')) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    showToast('Message deleted', 'ok');
+    load();
+  } catch (e) {
+    btn.disabled = false;
+    showToast('Error: ' + e.message, 'err');
+  }
+});
+
+$('refresh').addEventListener('click', load);
+textEl.addEventListener('input', countChars);
+numEl.value = localStorage.getItem('zte.lastNumber') || '';
+countChars();
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

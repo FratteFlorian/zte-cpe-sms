@@ -1,0 +1,12 @@
+# credentials
+password
+*.password
+pwd.txt
+
+# local data (SMS archive, logs)
+messages.json
+*.log
+
+# dependencies / OS noise
+node_modules/
+.DS_Store
