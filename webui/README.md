@@ -1,5 +1,13 @@
 # ZTE SMS WebUI
 
+> ## ⚠️ No authentication — LAN only, never on the internet
+>
+> There is **no login**. Every request that reaches the server is accepted, so anyone on
+> your network can read your SMS and send messages in your name. Do not port-forward this
+> service, do not put it on a reverse proxy without its own authentication, do not expose
+> it through a tunnel — use a VPN for remote access. Binding to `127.0.0.1` behind a
+> properly authenticated proxy is the only safe way to make it reachable from outside.
+
 Small web UI for ZTE 5G CPEs: shows the last 10 SMS and sends new ones. Every message is
 **archived locally and then deleted from the modem**, so the SIM storage never fills up.
 

@@ -1,5 +1,16 @@
 # zte-cpe-sms — SMS toolkit for ZTE 5G CPEs
 
+> ## ⚠️ No authentication — LAN only, never on the internet
+>
+> The web UI ships **without any login**. Its API accepts every request that reaches it,
+> so anyone who can connect can read your SMS and **send messages in your name**.
+> Do not port-forward it, do not put it on a reverse proxy without its own auth, do not
+> expose it through a tunnel. Remote access belongs behind a VPN. A leaked URL is enough:
+> there is nothing else to guess.
+>
+> The CLI is not affected — it has no network listener. The router password is only used
+> outbound, and never sent in clear text.
+
 Unofficial SMS toolkit for ZTE 5G CPEs (MC889 / MC888, firmware `BD_ATMC889V1.0.0B19`
 and similar). Talks to the router's internal JSON API directly — no browser automation,
 no use of the router's own web interface, no SIM swapping.
@@ -137,6 +148,11 @@ Why it can fail, and what to do:
   Try a different target, e.g. `tracepath -n -m 4 1.1.1.1`, or set the address manually.
 * **More than one hop in between** (modem in bridge mode, extra switches, VLANs).
   Then hop 2 is not the modem — set the address manually.
+* **The carrier's own hops are private as well.** Do not try to identify the modem as
+  "the last hop with a private address": behind one MC889, hops 3–5 were `172.20.x`,
+  `192.168.242.x` and `172.17.x`, the carrier's own CGNAT space. That rule picks a carrier
+  node and every request fails. The modem is identified by position (hop 2), not by its
+  address range.
 * **Finding it by hand:** open your router's admin UI and look at its WAN/DHCP client
   list; the modem is the upstream device. Alternatively plug a laptop directly into the
   modem for one session and check its default gateway.

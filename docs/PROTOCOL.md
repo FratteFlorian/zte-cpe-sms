@@ -1,5 +1,9 @@
 # ZTE CPE internal SMS API
 
+> **Note:** the endpoints below are unauthenticated once a session exists, and the
+> web UI built on them has no login of its own — keep both on a trusted LAN, never
+> reachable from the internet.
+
 Everything below was verified against an **MC889** running
 `BD_ATMC889V1.0.0B19` (web assets `WEB_H3AAUTMC889V1.0.0B16`), reached over plain HTTP
 on the LAN side of the device.

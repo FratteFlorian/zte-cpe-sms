@@ -48,6 +48,10 @@ const { execFileSync } = require('child_process');
 // The modem sits on the WAN side of the home router. A packet to the internet
 // travels laptop -> router (hop 1) -> modem (hop 2), so hop 2 is the modem's
 // LAN address. It changes after a power cycle, hence it is resolved live.
+//
+// Deliberately not "the last hop with a private address": carriers hand out
+// private/CGNAT addresses on their own hops too (measured: 172.20.x,
+// 192.168.242.x, 172.17.x behind the modem), so that rule picks a carrier node.
 function discoverHost() {
   if (process.env.ZTE_HOST) return process.env.ZTE_HOST;
   try {

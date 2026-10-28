@@ -25,6 +25,9 @@ const UA = 'zte-sms-webui/1.0';
 const sh = (s) => crypto.createHash('sha256').update(s, 'utf8').digest('hex').toUpperCase();
 
 // Without ZTE_HOST: the modem is hop 2 behind the home router (hop 1 = router).
+// Not "the last hop with a private address": carriers use private/CGNAT ranges
+// on their own hops as well (measured: 172.20.x, 192.168.242.x, 172.17.x), so
+// that rule would return a carrier node instead of the modem.
 function discoverHost() {
   try {
     const out = execFileSync('tracepath', ['-n', '-m', '4', '8.8.8.8'], {
